@@ -1,0 +1,5 @@
+users/*
+__pycache__/*
+keep_alive.py
+creds.py
+discloud/*
