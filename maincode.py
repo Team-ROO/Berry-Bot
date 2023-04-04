@@ -276,6 +276,4 @@ help_message = '''\
 `{prefix}help` - Shows this message
 '''.format(prefix = config.bot_command_prefix)
 
-# bot.run(creds.local_bot_token)
-# bot.run(creds.replit_bot_token)
-bot.run(creds.discloud_bot_token)
+bot.run(creds.bot_token)
