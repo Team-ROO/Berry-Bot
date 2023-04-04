@@ -183,6 +183,9 @@ async def send_message(message, text_to_send):
         await message.delete()
     await recipient.send(text_to_send)
 
+async def send_message_to_user(recipient, text_to_send):
+    await recipient.send(text_to_send)
+
 # Alert Functions
 async def check_alerts():
     while True:
@@ -200,7 +203,7 @@ async def check_alerts():
                     if alert_time <= get_utc_now().timestamp():
                         total_alerts += 1
                         alert_message = beautify_ready_alert_message(alert)
-                        await send_message(bot.get_user(user_id), alert_message)
+                        await send_message_to_user(bot.get_user(user_id), alert_message)
                         user_data["alerts"].remove(alert)
                         await write_json(user_data, user_file)
         print(f"Sent {total_alerts} alerts and checked {total_users} users.")
