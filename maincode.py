@@ -55,6 +55,8 @@ async def run_berry_command(message):
     with open('berries_data.json', 'r') as berries_file:
         berries = json.load(berries_file)
         user_data = await get_user_data_by_userfile(user_file)
+        if berry_command not in berries:
+            return
         berry_data = berries[berry_command]
         berry_name = berry_data['name']
         current_time = get_utc_now()
@@ -62,9 +64,7 @@ async def run_berry_command(message):
         beautified_time = beautify_remaining_time(alert_time_datetime - current_time)
         await add_alert(user_data, berry_name, alert_time_datetime.timestamp(), AlertType.harvest.value)
         await write_json(user_data, user_file)
-        await send_message(message.author, f'A reminder has been set to harvest your {berry_name} berries in **{beautified_time}**.')
-        if not isinstance(message.channel, discord.channel.DMChannel):
-            await message.delete()
+        await send_message(message, f'A reminder has been set to harvest your {berry_name} berries in **{beautified_time}**.')
 
 async def run_generic_command(message):
     user_file = await get_user_file_by_author(message.author)
@@ -72,14 +72,14 @@ async def run_generic_command(message):
 
     # Test commands
     if user_command == CommandsEnum.ping:
-        await send_message(message.author, "Pong!")
+        await send_message(message, "Pong!")
         return
     
     if user_command == CommandsEnum.myalerts:
         user_data = await get_user_data_by_userfile(user_file)
         if "alerts" in user_data:
             if len(user_data["alerts"]) == 0:
-                await send_message(message.author, "You have no reminders.")
+                await send_message(message, "You have no reminders.")
                 return
             all_alerts_message = "**Active Reminders**:\n"
             alerts = sorted(user_data["alerts"], key=lambda k: k['time'])
@@ -89,31 +89,31 @@ async def run_generic_command(message):
                 remaining_time = alert_time_datetime - get_utc_now()
                 remaining_time_formatting_text = beautify_remaining_time(remaining_time)
                 all_alerts_message += beautify_alert_message(alert['type'], alert['name'], remaining_time_formatting_text)
-            await send_message(message.author, all_alerts_message)
+            await send_message(message, all_alerts_message)
         else:
-            await send_message(message.author, "You have no reminders.")
+            await send_message(message, "You have no reminders.")
         return
     
     if user_command == CommandsEnum.clearalerts:
         user_data = await get_user_data_by_userfile(user_file)
         if "alerts" in user_data:
             if len(user_data["alerts"]) == 0:
-                await send_message(message.author, "You have no reminders.")
+                await send_message(message, "You have no reminders.")
                 return
             user_data["alerts"] = []
             await write_json(user_data, user_file)
-            await send_message(message.author, "All reminders have been cleared.")
+            await send_message(message, "All reminders have been cleared.")
         return
 
     if user_command == CommandsEnum.help:
-        await send_message(message.author, help_message)
+        await send_message(message, help_message)
         return
     
     if user_command.startswith(CommandsEnum.water):
         try:
             hours = int(message.content.split(" ")[1])
         except (IndexError, ValueError):
-            await send_message(message.author, "Please enter a valid number of hours.")
+            await send_message(message, "Please enter a valid number of hours.")
             raise
         user_data = await get_user_data_by_userfile(user_file)
         current_time = get_utc_now()
@@ -121,7 +121,7 @@ async def run_generic_command(message):
         beautified_time = beautify_remaining_time(alert_time_datetime - current_time)
         await add_alert(user_data, "", alert_time_datetime.timestamp(), AlertType.water.value)
         await write_json(user_data, user_file)
-        await send_message(message.author, f'A reminder has been set to water your berries in **{beautified_time}**.')
+        await send_message(message, f'A reminder has been set to water your berries in **{beautified_time}**.')
 
 # Get user file and data
 async def get_user_file_by_author(author):
@@ -176,8 +176,12 @@ async def write_json(user_data, user_file):
     with open(user_file, 'w') as user_file:
         json.dump(user_data, user_file)
 
-async def send_message(author, message):
-    await author.send(message)
+async def send_message(message, text_to_send):
+    recipient = message.author
+    if not isinstance(message, discord.DMChannel):
+        recipient = message.channel
+        await message.delete()
+    await recipient.send(text_to_send)
 
 # Alert Functions
 async def check_alerts():
