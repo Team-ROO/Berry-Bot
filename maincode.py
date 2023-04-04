@@ -179,7 +179,6 @@ async def write_json(user_data, user_file):
 async def send_message(message, text_to_send):
     recipient = message.author
     if not isinstance(message.channel, discord.channel.DMChannel):
-        recipient = message.channel
         await message.delete()
     await recipient.send(text_to_send)
 
